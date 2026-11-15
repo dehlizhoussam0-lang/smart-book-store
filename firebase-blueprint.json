@@ -1,0 +1,238 @@
+{
+  "entities": {
+    "Book": {
+      "title": "Book",
+      "description": "A digital book listing submitted by an author or managed by the store administrator.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Book title (Arabic or primary language)."
+        },
+        "titleEn": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Optional English title for bilingual display."
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Author name (Arabic or primary language)."
+        },
+        "authorEn": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Optional English author name."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["تطوير الذات", "تكنولوجيا", "أدب وروايات", "مال والأعمال"],
+          "description": "Storefront category."
+        },
+        "price": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "description": "Book price label."
+        },
+        "priceEn": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "description": "Optional English price label."
+        },
+        "cover": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "description": "Book cover image URL or local asset path."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved"],
+          "description": "Moderation status."
+        },
+        "contact": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "description": "Author or store payment/contact channel."
+        },
+        "contactEn": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "description": "Optional English contact/payment channel."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 2000,
+          "description": "Optional book synopsis."
+        },
+        "descriptionEn": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 2000,
+          "description": "Optional English synopsis."
+        },
+        "contentUrl": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500000,
+          "description": "Optional reading link or small inline PDF/EPUB data URL."
+        },
+        "contentFileName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Optional attached file name."
+        },
+        "pages": {
+          "type": "number",
+          "description": "Optional page count."
+        },
+        "publishedYear": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 10,
+          "description": "Optional publication year."
+        },
+        "authorUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the user who created the book."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "title",
+        "author",
+        "category",
+        "price",
+        "cover",
+        "status",
+        "contact",
+        "authorUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A reader acquisition request submitted from the reading bag.",
+      "type": "object",
+      "properties": {
+        "referenceId": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Human-readable order reference ID."
+        },
+        "buyerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the buyer."
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Buyer full name."
+        },
+        "customerContact": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Buyer email or phone contact."
+        },
+        "bookIds": {
+          "type": "array",
+          "description": "Bounded list of requested book document IDs (max 50)."
+        },
+        "bookTitles": {
+          "type": "array",
+          "description": "Bounded list of requested book titles (max 50)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "completed"],
+          "description": "Order fulfillment status."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "referenceId",
+        "buyerUid",
+        "customerName",
+        "customerContact",
+        "bookIds",
+        "bookTitles",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Granted administrator entry keyed by Firebase Auth UID.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 200,
+          "description": "Administrator email address."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        }
+      },
+      "required": ["email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/books/{bookId}": {
+      "schema": { "$ref": "#/entities/Book" },
+      "description": "Public approved books and pending author book submissions."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Private reader book acquisition requests."
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Authorized store administrators."
+    }
+  }
+}

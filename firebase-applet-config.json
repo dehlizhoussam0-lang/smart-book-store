@@ -1,0 +1,12 @@
+{
+  "projectId": "smart-book-store",
+  "appId": "1:543036575949:web:f036d04b4235bf34d45984",
+  "apiKey": "AIzaSyC4ThNTF2YPpSLzYSlfMYJHYhRWeg7m-HQ",
+  "authDomain": "smart-book-store.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-3e0da7e3-febe-4701-92dd-ac9535dc75f2",
+  "storageBucket": "smart-book-store.firebasestorage.app",
+  "messagingSenderId": "543036575949",
+  "measurementId": "",
+  "oAuthClientId": "543036575949-nm1ntpfk69bc9vsrr22lg357g9amecdt.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
+}

@@ -1,0 +1,237 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable security primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'dehlizhoussam0@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (isVerifiedUser() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function isValidCategory(cat) {
+      return cat is string && cat in ['تطوير الذات', 'تكنولوجيا', 'أدب وروايات', 'مال والأعمال'];
+    }
+
+    function isValidBook(data) {
+      return data.keys().hasAll([
+          'title',
+          'author',
+          'category',
+          'price',
+          'cover',
+          'status',
+          'contact',
+          'authorUid',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'title',
+          'titleEn',
+          'author',
+          'authorEn',
+          'category',
+          'price',
+          'priceEn',
+          'cover',
+          'status',
+          'contact',
+          'contactEn',
+          'description',
+          'descriptionEn',
+          'contentUrl',
+          'contentFileName',
+          'pages',
+          'publishedYear',
+          'authorUid',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && (!('titleEn' in data) || (data.titleEn is string && data.titleEn.size() >= 1 && data.titleEn.size() <= 200))
+        && data.author is string && data.author.size() >= 1 && data.author.size() <= 120
+        && (!('authorEn' in data) || (data.authorEn is string && data.authorEn.size() >= 1 && data.authorEn.size() <= 120))
+        && isValidCategory(data.category)
+        && data.price is string && data.price.size() >= 1 && data.price.size() <= 40
+        && (!('priceEn' in data) || (data.priceEn is string && data.priceEn.size() >= 1 && data.priceEn.size() <= 40))
+        && data.cover is string && data.cover.size() >= 1 && data.cover.size() <= 2000
+        && data.status is string && data.status in ['pending', 'approved']
+        && data.contact is string && data.contact.size() >= 1 && data.contact.size() <= 300
+        && (!('contactEn' in data) || (data.contactEn is string && data.contactEn.size() >= 1 && data.contactEn.size() <= 300))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 2000))
+        && (!('descriptionEn' in data) || (data.descriptionEn is string && data.descriptionEn.size() <= 2000))
+        && (!('contentUrl' in data) || (data.contentUrl is string && data.contentUrl.size() >= 1 && data.contentUrl.size() <= 500000))
+        && (!('contentFileName' in data) || (data.contentFileName is string && data.contentFileName.size() >= 1 && data.contentFileName.size() <= 200))
+        && (!('pages' in data) || (data.pages is number && data.pages >= 1 && data.pages <= 10000))
+        && (!('publishedYear' in data) || (data.publishedYear is string && data.publishedYear.size() >= 4 && data.publishedYear.size() <= 10))
+        && isValidId(data.authorUid)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+          'referenceId',
+          'buyerUid',
+          'customerName',
+          'customerContact',
+          'bookIds',
+          'bookTitles',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'referenceId',
+          'buyerUid',
+          'customerName',
+          'customerContact',
+          'bookIds',
+          'bookTitles',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.referenceId is string && data.referenceId.size() >= 5 && data.referenceId.size() <= 32 && data.referenceId.matches('^[a-zA-Z0-9_\\-]+$')
+        && isValidId(data.buyerUid)
+        && data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120
+        && data.customerContact is string && data.customerContact.size() >= 1 && data.customerContact.size() <= 200
+        && data.bookIds is list && data.bookIds.size() >= 1 && data.bookIds.size() <= 50 && data.bookIds[0] is string
+        && data.bookTitles is list && data.bookTitles.size() >= 1 && data.bookTitles.size() <= 50 && data.bookTitles[0] is string
+        && data.status is string && data.status in ['pending', 'completed']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAdmin(data) {
+      return data.keys().hasAll(['email', 'createdAt'])
+        && data.keys().hasOnly(['email', 'createdAt'])
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 200
+        && data.createdAt is timestamp;
+    }
+
+    // Books collection: approved books are public to read; pending books are private to author and admin
+    match /books/{bookId} {
+      allow get: if isValidId(bookId) && (
+        existing().status == 'approved'
+        || isAdmin()
+        || (isVerifiedUser() && existing().authorUid == request.auth.uid)
+      );
+
+      allow list: if resource.data.status == 'approved'
+        || isBootstrappedAdmin()
+        || (isVerifiedUser() && resource.data.authorUid == request.auth.uid);
+
+      allow create: if isVerifiedUser()
+        && isValidId(bookId)
+        && isValidBook(incoming())
+        && incoming().authorUid == request.auth.uid
+        && (incoming().status == 'pending' || (incoming().status == 'approved' && isAdmin()))
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser()
+        && isValidId(bookId)
+        && isValidBook(incoming())
+        && incoming().authorUid == existing().authorUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'status',
+          'title',
+          'titleEn',
+          'author',
+          'authorEn',
+          'category',
+          'price',
+          'priceEn',
+          'cover',
+          'contact',
+          'contactEn',
+          'description',
+          'descriptionEn',
+          'contentUrl',
+          'contentFileName',
+          'pages',
+          'publishedYear',
+          'updatedAt'
+        ]);
+
+      allow delete: if isAdmin() && isValidId(bookId);
+    }
+
+    // Orders collection: restricted to order owner and store admin
+    match /orders/{orderId} {
+      allow get: if isValidId(orderId) && (
+        isAdmin()
+        || (isVerifiedUser() && existing().buyerUid == request.auth.uid)
+      );
+
+      allow list: if isBootstrappedAdmin()
+        || (isVerifiedUser() && resource.data.buyerUid == request.auth.uid);
+
+      allow create: if isVerifiedUser()
+        && isValidId(orderId)
+        && isValidOrder(incoming())
+        && incoming().buyerUid == request.auth.uid
+        && incoming().status == 'pending'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isAdmin()
+        && isValidId(orderId)
+        && isValidOrder(incoming())
+        && incoming().buyerUid == existing().buyerUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && existing().status != 'completed'
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+
+      allow delete: if isAdmin() && isValidId(orderId);
+    }
+
+    // Admins collection: managed solely by bootstrapped admin
+    match /admins/{adminUid} {
+      allow get: if isAdmin() && isValidId(adminUid);
+      allow list: if isBootstrappedAdmin();
+      allow create: if isBootstrappedAdmin()
+        && isValidId(adminUid)
+        && isValidAdmin(incoming())
+        && incoming().createdAt == request.time;
+      allow update: if isBootstrappedAdmin()
+        && isValidId(adminUid)
+        && isValidAdmin(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['email']);
+      allow delete: if isBootstrappedAdmin() && isValidId(adminUid);
+    }
+  }
+}

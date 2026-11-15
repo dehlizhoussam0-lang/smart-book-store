@@ -1,0 +1,6 @@
+{
+  "name": "متجر الكتب الذكي — منصة المؤلفين",
+  "description": "منصة الكتب الرقمية لنشر واقتناء الكتب العربية مع لوحة تحكم لإدارة طلبات النشر.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
